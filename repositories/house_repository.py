@@ -8,5 +8,5 @@ class HouseRepository:
 
     async def insert(self, house: House) -> str:
         house_dict = house.to_dict()
-        result = await self.collection.insert_one(house_dict)
-        return str(result.inserted_id)
+        result = await self.collection.insert_one(house_dict)  
+        return str(result.inserted_id) 
