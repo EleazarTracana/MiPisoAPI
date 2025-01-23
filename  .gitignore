@@ -6,3 +6,4 @@
 # Ignore virtual environment directories (adjust if needed)
 env/
 venv/
+settings.json
