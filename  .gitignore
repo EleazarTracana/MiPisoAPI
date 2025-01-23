@@ -1,6 +1,8 @@
-__pycache__/
-models/__pycache__/
-repositories/__pycache__/
+# Ignore __pycache__ directories and compiled Python files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Ignore virtual environment directories (adjust if needed)
 env/
-*.pyc
-*.pyo
+venv/
