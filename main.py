@@ -9,9 +9,6 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 app = FastAPI()
-
-test_array = [1,2,3,4,5]
-
 @app.get('/api/v1/health')
 async def get_health_status():
     return {"Status": "Ok"}
