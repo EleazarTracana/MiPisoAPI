@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from fastapi import Depends
 from repositories import WebsitesRepository
-from models.requests.house_request import  HouseRequest
-from models.responses.house_response import  HouseResponse
-
-from models import House
+from requests import  WebsiteRequest
+from responses import  WebsiteResponse
+from models import Website
 from dotenv import load_dotenv 
 
 load_dotenv() 
@@ -19,14 +18,17 @@ async def get_health_status():
 async def get_house_by_id(websiteId: str, websites_repository: WebsitesRepository = Depends()):
     result = await websites_repository.find_one(websiteId)
     if result:
-        HouseResponse.from_orm(result)
+        WebsiteResponse.from_orm(result)
     return None
 
-@app.get("/api/v1/websites/{websiteId}")
-async def get_house_by_id(websiteId: str, websites_repository: WebsitesRepository = Depends()):
-    result = await websites_repository.find_one(websiteId)
+@app.post("/api/v1/websites")
+async def get_house_by_id(request: WebsiteRequest, websites_repository: WebsitesRepository = Depends()) -> WebsiteResponse:
+    result = await websites_repository.insert_one(Website(
+        name=request.name,
+        url=request.url
+    ))
     if result:
-        HouseResponse.from_orm(result)
+        WebsiteResponse.from_orm(result)
     return None
 
 
