@@ -1,11 +1,19 @@
 from pydantic import BaseModel
-from models import WebsiteSchema
+from typing import List
+class WebsiteSchemaFieldResponse(BaseModel):
+    name: str
+    selector: str
+    type: str
+class WebsiteSchemaResponse(BaseModel):
+    name: str
+    base_selector: str
+    fields: List[WebsiteSchemaFieldResponse]
 
 class WebsiteResponse(BaseModel):
     id: str
     name: str
     description: str
     page_query_parameter: str
-    schema: WebsiteSchema
+    website_schema: WebsiteSchemaResponse
     class Config:
         from_attributes= True

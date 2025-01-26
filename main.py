@@ -1,10 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi import Depends
-from repositories import WebsitesRepository
-from requests import  WebsiteRequest
+from web_requests import  WebsiteRequest
 from responses import  WebsiteResponse
-from models import Website
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
+
+from website_service import WebsiteService 
 
 load_dotenv() 
 
@@ -14,21 +14,21 @@ app = FastAPI()
 async def get_health_status():
     return {"Status": "Ok"}
 
-@app.get("/api/v1/websites/{websiteId}")
-async def get_house_by_id(websiteId: str, websites_repository: WebsitesRepository = Depends()):
-    result = await websites_repository.find_one(websiteId)
-    if result:
-        WebsiteResponse.from_orm(result)
-    return None
+@app.get("/api/v1/websites/{website_id}")
+async def get_website_by_id(website_id: str, website_service: WebsiteService = Depends()) -> WebsiteResponse:
+    result = await website_service.find_one_by_id(website_id)
+    if not result:
+        raise HTTPException(404, "Website not found")
+    return result
+
+@app.post("/api/v1/websites/{website_id}")
+async def run_scrapper_by_website_id(website_id: str, website_service: WebsiteService = Depends()):
+    result = await website_service.run_scrapper_by_website_id(website_id)
+    return result
 
 @app.post("/api/v1/websites")
-async def get_house_by_id(request: WebsiteRequest, websites_repository: WebsitesRepository = Depends()) -> WebsiteResponse:
-    result = await websites_repository.insert_one(Website(
-        name=request.name,
-        url=request.url
-    ))
-    if result:
-        WebsiteResponse.from_orm(result)
-    return None
+async def create_by_request(request: WebsiteRequest, website_service: WebsiteService = Depends()) -> WebsiteResponse:
+    result = await website_service.create_by_request(request)
+    return result
 
 

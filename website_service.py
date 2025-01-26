@@ -1,7 +1,7 @@
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, JsonCssExtractionStrategy, CrawlResult
 from repositories import WebsitesRepository
 from models import WebsiteSchema, Website
-from requests import WebsiteRequest
+from web_requests import WebsiteRequest
 from responses import WebsiteResponse
 from fastapi import Depends
 import json
@@ -22,7 +22,7 @@ class WebScrapperManager():
             config=config,
             url=url
         )
-        
+
 
 async def get_scraper_client():
     try:
@@ -40,10 +40,14 @@ class WebsiteService():
         result = await cls.website_repository.insert_one(Website(
             name=request.name,
             url=request.url,
-            schema=request.website_schema,
+            website_schema=request.website_schema,
             page_query_parameter=request.page_query_parameter
         ))
         return WebsiteResponse.from_orm(result)
+
+    async def find_one_by_id(cls, website_id: str) -> WebsiteResponse:
+        result = await cls.website_repository.find_one(website_id)
+        return result
 
     async def run_scrapper_by_website_id(cls, website_id: str):
         website = await cls.website_repository.find_one(website_id)
