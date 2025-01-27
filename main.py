@@ -21,8 +21,8 @@ async def get_website_by_id(website_id: str, website_service: WebsiteService = D
         raise HTTPException(404, "Website not found")
     return result
 
-@app.post("/api/v1/websites/{website_id}")
-async def run_scrapper_by_website_id(website_id: str, website_service: WebsiteService = Depends()):
+@app.post("/api/v1/websites/{website_id}/crawl")
+async def run_scraper_by_website_id(website_id: str, website_service: WebsiteService = Depends()):
     result = await website_service.run_scrapper_by_website_id(website_id)
     return result
 

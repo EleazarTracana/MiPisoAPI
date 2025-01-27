@@ -1,57 +1,50 @@
-from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, JsonCssExtractionStrategy, CrawlResult
+import aiohttp
 from repositories import WebsitesRepository
 from models import WebsiteSchema, Website, WebsiteSchemaField
 from responses import WebsiteResponse
 from web_requests import WebsiteRequest
 from fastapi import Depends
+import os
 import json
 
-class WebScrapperManager():
-    client:  AsyncWebCrawler
+CRAWL4AI_HOST = str(os.getenv('CRAWL4AI_HOST'))
+CRAWL4AI_API_TOKEN=str(os.getenv('CRAWL4AI_API_TOKEN'))
 
-    def __init__(self, client):
+class Crawl4AIClient:
+    def __init__(self, client: aiohttp.ClientSession):
         self.client = client
 
-    async def run_with_schema_configuration(cls, schema: WebsiteSchema, url: str) -> CrawlResult:
-        extraction_strategy = JsonCssExtractionStrategy(schema, verbose=True)
-        config = CrawlerRunConfig(
-            cache_mode = CacheMode.BYPASS,
-            extraction_strategy=extraction_strategy,
-        )
-        return await cls.client.arun(
-            config=config,
-            url=url
+    async def get_crawl(cls, task_id: str):
+        return await cls.client.get(f"{CRAWL4AI_API_TOKEN}/task/{task_id}")
+
+    async def run_crawl(cls, url: str, schema: WebsiteSchema):
+        return await cls.client.post(f"{CRAWL4AI_HOST}/crawl",
+            json={
+                "urls": url,
+                "extraction_config": {
+                    "type": "json_css",
+                    "params": {"schema": schema.to_dict()}
+                }
+            }
         )
 
-
-async def get_scraper_client():
+async def get_crawl4ai_client():
     try:
-        client = await AsyncWebCrawler().start()
-        return WebScrapperManager(client)
+        client = aiohttp.ClientSession(headers={
+            "Authorization": f"Bearer {CRAWL4AI_API_TOKEN}"
+        })
+
+        return Crawl4AIClient(client)
     finally:
-         await client.close()
+        await client.close()
 
 class WebsiteService():
-    def __init__(self, website_repository: WebsitesRepository = Depends(), web_scrapper: WebScrapperManager = Depends(get_scraper_client)) -> None:
+    def __init__(self, website_repository: WebsitesRepository = Depends(), craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
         self.website_repository = website_repository
-        self.web_scrapper = web_scrapper
+        self.craw4ai_client = craw4ai_client
 
     async def create_by_request(cls, request: WebsiteRequest) -> WebsiteResponse:
-        website=Website(
-            id=None,
-            name=request.name,
-            url=request.url,
-            website_schema=WebsiteSchema(
-                name=request.website_schema.name,
-                base_selector=request.website_schema.base_selector,
-                fields=[WebsiteSchemaField(
-                    name=field.name,
-                    selector=field.selector,
-                    type=field.type
-                ) for field in request.website_schema.fields]
-            ),
-            page_query_parameter=request.page_query_parameter
-        )
+        website = Website.from_request(request)
         result = await cls.website_repository.insert_one(website)
         return WebsiteResponse.from_orm(result)
 
@@ -61,10 +54,8 @@ class WebsiteService():
 
     async def run_scrapper_by_website_id(cls, website_id: str):
         website = await cls.website_repository.find_one(website_id)
-        scrapper_result = await cls.web_scrapper.run_with_schema_configuration(website.schema, website.url)
-        extracted_content = json.loads(scrapper_result)
-
-        print(extracted_content)
+        response = await cls.craw4ai_client.run_crawl(website.url, website.website_schema)
+        return await response.json()
 
 
 

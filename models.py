@@ -1,6 +1,7 @@
 
 from uuid import uuid4
 from typing import List
+from web_requests import WebsiteRequest
 
 class DbModel:
     id: str
@@ -92,6 +93,24 @@ class Website(DbModel):
             name=data["name"],
             page_query_parameter=data["page_query_parameter"],
             website_schema=WebsiteSchema.from_dict(data["website_schema"])
+        )
+
+    @classmethod
+    def from_request(cls, request: WebsiteRequest):
+       return cls(
+            id=None,
+            name=request.name,
+            url=request.url,
+            website_schema=WebsiteSchema(
+                name=request.website_schema.name,
+                base_selector=request.website_schema.base_selector,
+                fields=[WebsiteSchemaField(
+                    name=field.name,
+                    selector=field.selector,
+                    type=field.type
+                ) for field in request.website_schema.fields]
+            ),
+            page_query_parameter=request.page_query_parameter
         )
 
 class House(DbModel):
