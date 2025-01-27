@@ -1,8 +1,8 @@
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, JsonCssExtractionStrategy, CrawlResult
 from repositories import WebsitesRepository
-from models import WebsiteSchema, Website
-from web_requests import WebsiteRequest
+from models import WebsiteSchema, Website, WebsiteSchemaField
 from responses import WebsiteResponse
+from web_requests import WebsiteRequest
 from fastapi import Depends
 import json
 
@@ -37,17 +37,27 @@ class WebsiteService():
         self.web_scrapper = web_scrapper
 
     async def create_by_request(cls, request: WebsiteRequest) -> WebsiteResponse:
-        result = await cls.website_repository.insert_one(Website(
+        website=Website(
+            id=None,
             name=request.name,
             url=request.url,
-            website_schema=request.website_schema,
+            website_schema=WebsiteSchema(
+                name=request.website_schema.name,
+                base_selector=request.website_schema.base_selector,
+                fields=[WebsiteSchemaField(
+                    name=field.name,
+                    selector=field.selector,
+                    type=field.type
+                ) for field in request.website_schema.fields]
+            ),
             page_query_parameter=request.page_query_parameter
-        ))
+        )
+        result = await cls.website_repository.insert_one(website)
         return WebsiteResponse.from_orm(result)
 
     async def find_one_by_id(cls, website_id: str) -> WebsiteResponse:
         result = await cls.website_repository.find_one(website_id)
-        return result
+        return WebsiteResponse.from_orm(result)
 
     async def run_scrapper_by_website_id(cls, website_id: str):
         website = await cls.website_repository.find_one(website_id)

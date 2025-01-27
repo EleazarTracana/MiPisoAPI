@@ -40,7 +40,7 @@ class WebsitesRepository(BaseRepository):
     async def find_one(self, website_id: str) -> Website:
         result = await self.collection.find_one({ "_id": website_id})  
         if result:
-            return result
+            return Website.from_dict(result)
         return None
 
     async def insert_one(self, website: Website) -> Website:

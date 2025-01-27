@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 class WebsiteSchemaFieldRequest(BaseModel):
     name: str
@@ -7,7 +8,7 @@ class WebsiteSchemaFieldRequest(BaseModel):
 class WebsiteSchemaRequest(BaseModel):
     name: str
     base_selector: str
-    fields: list[WebsiteSchemaFieldRequest]
+    fields: List[WebsiteSchemaFieldRequest]
 
 class WebsiteRequest(BaseModel):
     name: str
