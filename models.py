@@ -17,17 +17,21 @@ class User(DbModel):
         self.name = name
         
 class WebsiteSchemaField:
-    def __init__(self, name: str, selector: str, type: str):
+    def __init__(self, name: str, selector: str, type: str, fields=None, attribute=None):
         self.name = name
         self.selector = selector
         self.type = type
+        self.attribute = attribute
+        self.fields = fields if fields is not None else []
 
     def to_dict(self):
         """Convert WebsiteSchemaField object to a dictionary."""
         return {
             "name": self.name,
             "selector": self.selector,
-            "type": self.type
+            "attribute": self.attribute,
+            "type": self.type,
+            "fields": self.fields
         }
     
     @classmethod
@@ -36,24 +40,26 @@ class WebsiteSchemaField:
         return cls(
             name=data["name"],
             type=data["type"],
-            selector=data["selector"]
+            attribute=data["attribute"],
+            selector=data["selector"],
+            fields=data["fields"]
         )
 
 
 class WebsiteSchema: 
     name: str
-    base_selector: str
+    baseSelector: str
     fields: List[WebsiteSchemaField]
     def __init__(self, name, base_selector, fields):
         self.name = name
-        self.base_selector = base_selector
+        self.baseSelector = base_selector
         self.fields = fields
 
     def to_dict(self): 
         """Convert object to a dictionary so it can be inserted in MongoDB."""
         return {
             "name": self.name,
-            "base_selector": self.base_selector,
+            "baseSelector": self.baseSelector,
             "fields": [field.to_dict() for field in self.fields]
         }
 
@@ -62,7 +68,7 @@ class WebsiteSchema:
         """Create the WebsiteSchema object from MongoDB data/dictionary"""
         return cls(
             name=data["name"],
-            base_selector=data["base_selector"],
+            base_selector=data["baseSelector"],
             fields=[WebsiteSchemaField.from_dict(field) for field in data["fields"]]
         )
 
@@ -95,20 +101,28 @@ class Website(DbModel):
             website_schema=WebsiteSchema.from_dict(data["website_schema"])
         )
 
+    @staticmethod
+    def create_schema_fields(fields):
+        if not fields:
+            return None
+        return [WebsiteSchemaField(
+            name=field.name,
+            selector=field.selector,
+            attribute=field.attribute,
+            type=field.type,
+            fields=Website.create_schema_fields(field.fields)
+        ) for field in fields]
+
     @classmethod
     def from_request(cls, request: WebsiteRequest):
-       return cls(
+        return cls(
             id=None,
             name=request.name,
             url=request.url,
             website_schema=WebsiteSchema(
                 name=request.website_schema.name,
-                base_selector=request.website_schema.base_selector,
-                fields=[WebsiteSchemaField(
-                    name=field.name,
-                    selector=field.selector,
-                    type=field.type
-                ) for field in request.website_schema.fields]
+                base_selector=request.website_schema.baseSelector,
+                fields=Website.create_schema_fields(request.website_schema.fields)
             ),
             page_query_parameter=request.page_query_parameter
         )

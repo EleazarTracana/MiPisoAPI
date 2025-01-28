@@ -22,8 +22,13 @@ async def get_website_by_id(website_id: str, website_service: WebsiteService = D
     return result
 
 @app.post("/api/v1/websites/{website_id}/crawl")
-async def run_scraper_by_website_id(website_id: str, website_service: WebsiteService = Depends()):
-    result = await website_service.run_scrapper_by_website_id(website_id)
+async def run_crawl_by_website_id(website_id: str, website_service: WebsiteService = Depends()):
+    result = await website_service.run_crawl_by_website_id(website_id)
+    return result
+
+@app.get("/api/v1/websites/{website_id}/crawl/{crawl_id}")
+async def get_crawl_by_website_id_and_crawl_id(website_id: str, crawl_id: str, website_service: WebsiteService = Depends()):
+    result = await website_service.get_crawl_by_website_id_and_crawl_id(website_id, crawl_id)
     return result
 
 @app.post("/api/v1/websites")

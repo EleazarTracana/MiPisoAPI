@@ -1,13 +1,16 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class WebsiteSchemaFieldRequest(BaseModel):
     name: str
     selector: str
     type: str
+    attribute: Optional[str] = None
+    fields: Optional[List['WebsiteSchemaFieldRequest']] = None
+
 class WebsiteSchemaRequest(BaseModel):
     name: str
-    base_selector: str
+    baseSelector: str
     fields: List[WebsiteSchemaFieldRequest]
 
 class WebsiteRequest(BaseModel):
