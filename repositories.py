@@ -44,6 +44,7 @@ class WebsitesRepository(BaseRepository):
         return None
 
     async def insert_one(self, website: Website) -> Website:
+        website.set_audit_fields()
         website_dict = website.to_dict()
         result = await self.collection.insert_one(website_dict) 
         website.id = result.inserted_id 

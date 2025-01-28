@@ -1,6 +1,7 @@
 
 from uuid import uuid4
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 from web_requests import WebsiteRequest
 
 class DbModel:
@@ -10,6 +11,10 @@ class DbModel:
     date_time_deleted: str
     deleted: bool
 
+    def set_audit_fields(cls):
+        cls.date_time_created = datetime.utcnow()
+        cls.date_time_modified = datetime.utcnow()
+
 class User(DbModel):
     def __init__(self, id, email, name):
         self.id = id if id else str(uuid4())
@@ -17,7 +22,7 @@ class User(DbModel):
         self.name = name
         
 class WebsiteSchemaField:
-    def __init__(self, name: str, selector: str, type: str, fields=None, attribute=None):
+    def __init__(self, name: str, selector: str, type: str,  fields: Optional[List['WebsiteSchemaField']] = None, attribute=None):
         self.name = name
         self.selector = selector
         self.type = type
@@ -31,7 +36,7 @@ class WebsiteSchemaField:
             "selector": self.selector,
             "attribute": self.attribute,
             "type": self.type,
-            "fields": self.fields
+            "fields": [field.to_dict() for field in self.fields]
         }
     
     @classmethod
@@ -42,7 +47,7 @@ class WebsiteSchemaField:
             type=data["type"],
             attribute=data["attribute"],
             selector=data["selector"],
-            fields=data["fields"]
+            fields=[WebsiteSchemaField.from_dict(field) for field in data.get("fields")]
         )
 
 
@@ -87,7 +92,9 @@ class Website(DbModel):
             "url": self.url,
             "name": self.name,
             "page_query_parameter": self.page_query_parameter,
-            "website_schema": self.website_schema.to_dict()
+            "website_schema": self.website_schema.to_dict(),
+            "date_time_created": self.date_time_created,
+            "date_time_modified": self.date_time_modified
         }
 
     @classmethod
@@ -126,24 +133,37 @@ class Website(DbModel):
             ),
             page_query_parameter=request.page_query_parameter
         )
-
 class House(DbModel):
+    id: str
+    external_id: str
+    address: str
     price: float
+    currency: str
+    square_meters: int
     website_id: str
+    external_id: str
     description: str
 
-    def __init__(self, id, price, website_id, description):
+    def __init__(self, id: str, price: float, address: str, currency: str, square_meters: int, website_id: str, external_id: str, description: str):
         self.id = id if id else str(uuid4())
         self.price = price
+        self.currency = currency
+        self.square_meters = square_meters
+        self.external_id = external_id
         self.website_id = website_id
         self.description = description
+        self.address = address
 
     def to_dict(self): 
         """Convert object to a dictionary so it can be inserted in MongoDB."""
         return {
             "_id": self.id,
+            "external_id": self.external_id,
+            "address": self.address,
             "price": self.price,
-            "website": self.website_id,
+            "currency" :self.currency,
+            "square_meters": self.square_meters,
+            "website_id": self.website_id,
             "description": self.description
         }
 
@@ -152,7 +172,11 @@ class House(DbModel):
         """Create the House object from MongoDB data/dictionary"""
         return cls(
             id=data.get("_id"),
+            external_id=data["external_id"],
+            currency=data["currency"],
             price=data["price"],
+            square_meters=data["square_meters"],
             website_id=data["website_id"],
             description=data["description"]
         )
+
