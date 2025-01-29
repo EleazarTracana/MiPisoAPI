@@ -30,7 +30,7 @@ class Website(DbModel):
             url=data["url"],
             name=data["name"],
             website_schema=WebsiteSchema.from_dict(data["website_schema"]),
-            pagination_schema=WebsiteSchema.from_dict(data=["pagination_schema"])
+            pagination_schema=WebsiteSchema.from_dict(data["pagination_schema"])
         )
 
     @staticmethod

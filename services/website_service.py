@@ -1,4 +1,3 @@
-import aiohttp
 from repositories.website_repository import WebsitesRepository
 from repositories.sell_houses_repository import SellHousesRepository
 from models.website_schema import WebsiteSchema
@@ -7,40 +6,8 @@ from models.website_schema_field import WebsiteSchemaField
 from responses import WebsiteResponse
 from web_requests import WebsiteRequest
 from fastapi import Depends
+from clients.crawl4ai_client import Crawl4AIClient, get_crawl4ai_client
 import json
-import os
-
-CRAWL4AI_HOST = str(os.getenv('CRAWL4AI_HOST'))
-CRAWL4AI_API_TOKEN=str(os.getenv('CRAWL4AI_API_TOKEN'))
-
-class Crawl4AIClient:
-    def __init__(self, client: aiohttp.ClientSession):
-        self.client = client
-
-    async def get_crawl(cls, task_id: str):
-        return await cls.client.get(f"{CRAWL4AI_HOST}/task/{task_id}")
-
-    async def run_crawl(cls, url: str, schema: WebsiteSchema):
-        return await cls.client.post(f"{CRAWL4AI_HOST}/crawl",
-            json={
-                "urls": url,
-                "cache_mode": "bypass",
-                "extraction_config": {
-                    "type": "json_css",
-                    "params": {"schema": schema.to_dict()}
-                }
-            }
-        )    
-
-async def get_crawl4ai_client():
-    try:
-        client = aiohttp.ClientSession(headers={
-            "Authorization": f"Bearer {CRAWL4AI_API_TOKEN}"
-        })
-
-        return Crawl4AIClient(client)
-    finally:
-        pass
 
 class WebsiteService():
     def __init__(self, websites_repository: WebsitesRepository = Depends(), houses_repository: SellHousesRepository = Depends(), craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
@@ -66,7 +33,6 @@ class WebsiteService():
         result = await cls.craw4ai_client.get_crawl(crawl_id)
         result_as_json = await result.json()
         extracted_content = result_as_json["result"]["extracted_content"]
-        extracted_json_result = json.loads(extracted_content),
         return json.loads(extracted_content)
 
     async def update_houses(cls, website_id: str, crawl_result):
