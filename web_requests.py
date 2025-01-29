@@ -17,4 +17,4 @@ class WebsiteRequest(BaseModel):
     name: str
     url: str
     website_schema: WebsiteSchemaRequest
-    page_query_parameter: str
+    pagination_schema: WebsiteSchemaRequest

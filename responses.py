@@ -18,7 +18,7 @@ class WebsiteSchemaResponse(BaseModel):
 class WebsiteResponse(BaseModel):
     id: str
     name: str
-    page_query_parameter: str
+    pagination_schema: WebsiteSchemaResponse
     website_schema: WebsiteSchemaResponse
     class Config:
         from_attributes= True

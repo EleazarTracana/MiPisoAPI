@@ -1,6 +1,9 @@
 import aiohttp
-from repositories import WebsitesRepository, HousesRepository
-from models import WebsiteSchema, Website, WebsiteSchemaField
+from repositories.website_repository import WebsitesRepository
+from repositories.sell_houses_repository import SellHousesRepository
+from models.website_schema import WebsiteSchema
+from models.website import Website 
+from models.website_schema_field import WebsiteSchemaField
 from responses import WebsiteResponse
 from web_requests import WebsiteRequest
 from fastapi import Depends
@@ -40,7 +43,7 @@ async def get_crawl4ai_client():
         pass
 
 class WebsiteService():
-    def __init__(self, websites_repository: WebsitesRepository = Depends(), houses_repository: HousesRepository = Depends(), craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
+    def __init__(self, websites_repository: WebsitesRepository = Depends(), houses_repository: SellHousesRepository = Depends(), craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
         self.websites_repository = websites_repository
         self.houses_repository = houses_repository,
         self.craw4ai_client = craw4ai_client
