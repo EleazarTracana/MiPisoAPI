@@ -35,7 +35,7 @@ class WebsiteRunnableService:
             return int(my_list[0])
         return None
 
-    async def run_by_website_id(cls, website_id):
+    async def run_by_website_id(cls, website_id) -> bool:
         website = await cls.websites_repository.find_one(website_id)
         runnables = await cls.websites_runnables_repository.find_by_website_id(website_id)
         for runnable in runnables:
@@ -56,7 +56,8 @@ class WebsiteRunnableService:
                             description=house["description"],
                             square_meters=cls.__clean_square_meters(house["square_meters"])
                         ))
-        return
+                    break
+        return True
 
     async def create_by_website_id(cls, website_id):
         website = await cls.websites_repository.find_one(website_id)
