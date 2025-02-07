@@ -7,10 +7,11 @@ class SellHousesRepository(BaseRepository):
     def __init__(self, database_manager: DatabaseManager = Depends(get_database)):
         super().__init__("houses",database_manager)
 
-    async def insert(self, house: SellHouse) -> str:
+    async def insert(self, house: SellHouse) -> SellHouse:
         house_dict = house.to_dict()
         result = await self.collection.insert_one(house_dict)  
-        return str(result.inserted_id)
+        house.id = result.inserted_id
+        return house
 
     async def find_one(self, houseId: str) -> str:
         result = await self.collection.find_one({ "_id": houseId})  

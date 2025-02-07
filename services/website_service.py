@@ -9,6 +9,7 @@ from fastapi import Depends
 from clients.crawl4ai_client import Crawl4AIClient, get_crawl4ai_client
 import json
 
+
 class WebsiteService():
     def __init__(self, websites_repository: WebsitesRepository = Depends(), houses_repository: SellHousesRepository = Depends(), craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
         self.websites_repository = websites_repository
@@ -33,6 +34,7 @@ class WebsiteService():
         result = await cls.craw4ai_client.get_crawl(crawl_id)
         result_as_json = await result.json()
         extracted_content = result_as_json["result"]["extracted_content"]
+        extracted_json_result = json.loads(extracted_content),
         return json.loads(extracted_content)
 
     async def update_houses(cls, website_id: str, crawl_result):

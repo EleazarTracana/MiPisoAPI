@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from models.website_runnable import WebsiteRunnableStatus
 from typing import List, Optional
 class WebsiteSchemaFieldResponse(BaseModel):
     name: str
@@ -8,6 +9,15 @@ class WebsiteSchemaFieldResponse(BaseModel):
     fields: Optional[List['WebsiteSchemaFieldResponse']] = None
     class Config:
         from_attributes= True
+
+class WebsiteRunnableResponse(BaseModel):
+    id: str
+    website_id: str
+    urls: List[str]
+    status: WebsiteRunnableStatus
+    class Config:
+        from_attributes= True
+
 class WebsiteSchemaResponse(BaseModel):
     name: str
     baseSelector: str
