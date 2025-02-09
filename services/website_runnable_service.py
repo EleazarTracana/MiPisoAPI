@@ -2,21 +2,25 @@ from repositories.website_repository import WebsitesRepository
 from repositories.website_runnable_repository import WebsiteRunnablesRepository
 from clients.crawl4ai_client import Crawl4AIClient, get_crawl4ai_client
 from models.website_runnable import WebsiteRunnable, WebsiteRunnableStatus
+from models.website_schema import WebsiteSchema
 from models.sell_house import SellHouse
 from fastapi import Depends
 from responses import WebsiteRunnableResponse
 from repositories.sell_houses_repository import SellHousesRepository
 from typing import List
+import time
 import json
+
 
 class WebsiteRunnableService:
     global max_chunk_runnable
     max_chunk_runnable = 100
+    runnable_wait_interval = 10
 
-    def __init__(self, websites_repository: WebsitesRepository = Depends(), 
-    websites_runnables_repository: WebsiteRunnablesRepository = Depends(), 
-    sell_houses_repository: SellHousesRepository = Depends(),
-    craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
+    def __init__(self, websites_repository: WebsitesRepository = Depends(),
+                 websites_runnables_repository: WebsiteRunnablesRepository = Depends(),
+                 sell_houses_repository: SellHousesRepository = Depends(),
+                 craw4ai_client: Crawl4AIClient = Depends(get_crawl4ai_client)) -> None:
 
         self.websites_repository = websites_repository
         self.websites_runnables_repository = websites_runnables_repository
@@ -35,29 +39,47 @@ class WebsiteRunnableService:
             return int(my_list[0])
         return None
 
+    async def __process_runnable(self, runnable: WebsiteRunnable, website_schema: WebsiteSchema):
+        task_id = await self.__run_crawl(runnable, website_schema)
+        results = await self.__get_crawl(task_id)
+        for raw_result in results:
+            await self.__process_runnable_result(raw_result)
+
+    async def __process_runnable_result(self, raw_result):
+        extracted_content = raw_result["result"]["extracted_content"]
+        extracted_content_json: List = json.loads(extracted_content)
+        for item in extracted_content_json:
+            await self.sell_houses_repository.insert(SellHouse(
+                id=None,
+                currency=item["currency"],
+                price=int(item["price"]),
+                address=item["address"],
+                description=item["description"],
+                square_meters=self.__clean_square_meters(item["square_meters"])
+            ))
+
+    async def __run_crawl(self, website_runnable: WebsiteRunnable, website_schema: WebsiteSchema) -> str:
+        raw_result = await self.craw4ai_client.run_crawl(website_runnable.urls, website_schema)
+        json_result = await raw_result.json()
+        return json_result["task_id"]
+
+    async def __get_crawl(self, task_id: str):
+        time.sleep(self.runnable_wait_interval)
+        raw_response = await self.craw4ai_client.get_crawl(task_id)
+        json_response = await raw_response.json()
+        if self.__is_crawl_finished(json_response):
+            return json_response["result"]
+        else:
+            return await self.__get_crawl(task_id)
+
+    def __is_crawl_finished(self, response) -> bool:
+        return response["status"] != "processing" and response["status"] != "pending"
+
     async def run_by_website_id(cls, website_id) -> bool:
         website = await cls.websites_repository.find_one(website_id)
         runnables = await cls.websites_runnables_repository.find_by_website_id(website_id)
         for runnable in runnables:
-            result = await cls.craw4ai_client.run_crawl(runnable.urls, website.website_schema)
-            result_as_json = await result.json()
-            while True:
-                response = await cls.craw4ai_client.get_crawl(result_as_json["task_id"])
-                response_as_json = await response.json()
-                if response_as_json["status"] != "processing" and response_as_json["status"] != "pending":
-                    extracted_content = response_as_json["result"]["extracted_content"]
-                    all_houses: List = json.loads(extracted_content)
-                    for house in all_houses:
-                        await cls.sell_houses_repository.insert(SellHouse(
-                            id=None,
-                            currency=house["currency"],
-                            price=int(house["price"]),
-                            address=house["address"],
-                            description=house["description"],
-                            square_meters=cls.__clean_square_meters(house["square_meters"])
-                        ))
-                    break
-        return True
+            await cls.__process_runnable(runnable, website.website_schema)
 
     async def create_by_website_id(cls, website_id):
         website = await cls.websites_repository.find_one(website_id)
@@ -68,7 +90,7 @@ class WebsiteRunnableService:
         while True:
             response = await cls.craw4ai_client.get_crawl(result_as_json["task_id"])
             response_as_json = await response.json()
-    
+
             if response_as_json["status"] != "processing" and response_as_json["status"] != "pending":
                 break
 
@@ -94,10 +116,7 @@ class WebsiteRunnableService:
 
         created_runnables_response: List[WebsiteRunnableResponse] = []
         for runnable in created_runnables:
-            created_runnables_response.append(WebsiteRunnableResponse.from_orm(runnable))
+            created_runnables_response.append(
+                WebsiteRunnableResponse.from_orm(runnable))
 
         return created_runnables_response
-            
-    
-
-         

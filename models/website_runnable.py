@@ -5,8 +5,9 @@ from uuid import uuid4
 
 class WebsiteRunnableStatus(Enum):
     CREATED = 1
-    RUNNING = 2
-    FINISHED = 3
+    RUNNING_CRAWL = 2,
+    EXTRACTED_RAW_CONTENT = 3
+    HOUSES_INSERTED = 4
 
 class WebsiteRunnable(DbModel):
     def __init__(self,id: str, website_id: str, urls: List[str], status: WebsiteRunnableStatus):
