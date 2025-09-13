@@ -1,0 +1,124 @@
+{
+	"info": {
+		"_postman_id": "506f790c-9556-4260-8eac-9b9bbae6d356",
+		"name": "MiPisoAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9502763"
+	},
+	"item": [
+		{
+			"name": "Execute All Runnables",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/websites/5de49f79-e2d5-4a88-9cc8-f090354455d9/runnables/crawl",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"websites",
+						"5de49f79-e2d5-4a88-9cc8-f090354455d9",
+						"runnables",
+						"crawl"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute Single Runnables",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/websites/fe0b1630-a334-4420-b353-c87dd9f075a2/runnables/fe0b1630-a334-4420-b353-c87dd9f075a2/crawl",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"websites",
+						"fe0b1630-a334-4420-b353-c87dd9f075a2",
+						"runnables",
+						"fe0b1630-a334-4420-b353-c87dd9f075a2",
+						"crawl"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Website",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Argen Prop Venta Villa Ortuzar\",\n    \"url\": \"https://www.argenprop.com/departamentos/venta\",\n    \"page_query_parameter\": \"pagina-{number}\",\n    \"pagination_schema\": {\n        \"name\": \"Max Page\",\n        \"baseSelector\": \"div.listing-container\",\n        \"fields\" : [\n            {\n                \"name\": \"max_page\",\n                \"selector\": \"ul.pagination li:nth-child(6)\",\n                \"type\": \"text\"\n            }\n        ]\n    },\n    \"website_schema\": {\n        \"name\": \"Houses\",\n        \"baseSelector\": \"div.listing__items\",\n        \"fields\": [\n            {\n                \"name\": \"houses\",\n                \"selector\": \"div.listing__item\",\n                \"type\": \"nested_list\",\n                \"fields\": [\n                    {\n                        \"name\": \"external_id\",\n                        \"selector\": \"a\",\n                        \"type\": \"attribute\",\n                        \"attribute\": \"data-item-card\"\n                    },\n                    {\n                        \"name\": \"title\",\n                        \"selector\": \"p.card__title--primary\",\n                        \"type\": \"text\"\n                    },\n                    {\n                        \"name\": \"address\",\n                        \"selector\": \"p.card__address\",\n                        \"type\": \"text\"\n                    },\n                    {\n                        \"name\": \"photos\",\n                        \"selector\": \"ul.card__photos\",\n                        \"type\": \"nested_list\",\n                        \"fields\": [\n                            {\n                                \"name\": \"image\",\n                                \"type\": \"attribute\",\n                                \"attribute\": \"data-src\",\n                                \"selector\": \"li img\"\n                            },\n                                                        {\n                                \"name\": \"image_2\",\n                                \"type\": \"attribute\",\n                                \"attribute\": \"src\",\n                                \"selector\": \"li img\"\n                            }\n                        ]\n                    },\n                    {\n                        \"name\": \"price\",\n                        \"type\": \"attribute\",\n                        \"selector\": \"div.card-contact-group span\",\n                        \"attribute\": \"data-precio\"\n                    },\n                    {\n                        \"name\": \"currency\",\n                        \"selector\": \"div.card-contact-group span\",\n                        \"attribute\": \"data-moneda\",\n                        \"type\": \"attribute\"\n                    },\n                    {\n                        \"name\": \"description\",\n                        \"selector\": \"p.card__info\",\n                        \"type\": \"text\"\n                    },\n                    {\n                        \"name\": \"square_meters\",\n                        \"type\": \"text\",\n                        \"selector\": \"ul.card__main-features li:first-of-type\"\n                    }\n                ]\n            }\n        ]\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/websites",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"websites"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Runnables",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/websites/74e84e9b-43b0-434a-8368-59eca07ac056/runnables",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"websites",
+						"74e84e9b-43b0-434a-8368-59eca07ac056",
+						"runnables"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
