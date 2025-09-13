@@ -1,0 +1,7 @@
+services:
+  crawl4ai:
+    image: unclecode/crawl4ai:all
+    environment:
+      - CRAWL4AI_API_TOKEN=test_api_token
+    ports:
+      - "11235:11235"
