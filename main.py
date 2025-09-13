@@ -32,6 +32,11 @@ async def run_crawl_by_website_id(website_id: str, website_runnables_service: We
     result = await website_runnables_service.run_by_website_id(website_id)
     return result
 
+@app.post("/api/v1/websites/{website_id}/runnables/{runnable_id}/crawl")
+async def run_crawl_by_website_id_and_runnable(website_id: str, runnable_id: str, website_runnables_service: WebsiteRunnableService = Depends()) -> bool:
+    result = await website_runnables_service.run_single_by_website(website_id, runnable_id)
+    return result
+
 @app.post("/api/v1/websites")
 async def create_by_request(request: WebsiteRequest, website_service: WebsiteService = Depends()) -> WebsiteResponse:
     result = await website_service.create_by_request(request)

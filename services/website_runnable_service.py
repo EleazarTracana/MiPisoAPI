@@ -14,7 +14,7 @@ import json
 
 class WebsiteRunnableService:
     global max_chunk_runnable
-    max_chunk_runnable = 100
+    max_chunk_runnable = 1
     runnable_wait_interval = 10
 
     def __init__(self, websites_repository: WebsitesRepository = Depends(),
@@ -33,30 +33,43 @@ class WebsiteRunnableService:
             all_urls.append(f"{base_url}?pagina-{i+1}")
         return all_urls
 
-    def __clean_square_meters(raw_square_meters: str) -> int:
+    def __clean_square_meters(self, raw_square_meters: str) -> int:
         my_list = raw_square_meters.split(" ")
-        if list.count == 2 and list[1] == "m² cubie.":
+        if len(my_list) == 4 and my_list[2] == "m²":
             return int(my_list[0])
         return None
 
     async def __process_runnable(self, runnable: WebsiteRunnable, website_schema: WebsiteSchema):
+        """
+        Process a runnable by running a crawl, waiting to be finished,
+        parses the result to our house model and is inserted in the repository
+        """
         task_id = await self.__run_crawl(runnable, website_schema)
         results = await self.__get_crawl(task_id)
         for raw_result in results:
-            await self.__process_runnable_result(raw_result)
+            await self.__process_runnable_result(raw_result, runnable.website_id)
 
-    async def __process_runnable_result(self, raw_result):
-        extracted_content = raw_result["result"]["extracted_content"]
+    async def __process_runnable_result(self, raw_result, website_id):
+        """
+        Parses the extracted content from the crawl api result and maps each
+        item individually to our house model.
+        """
+        extracted_content = raw_result["extracted_content"]
         extracted_content_json: List = json.loads(extracted_content)
-        for item in extracted_content_json:
-            await self.sell_houses_repository.insert(SellHouse(
-                id=None,
-                currency=item["currency"],
-                price=int(item["price"]),
-                address=item["address"],
-                description=item["description"],
-                square_meters=self.__clean_square_meters(item["square_meters"])
-            ))
+        for result in extracted_content_json:
+            for item in result["houses"]:
+                await self.sell_houses_repository.insert(SellHouse(
+                    id=None,
+                    website_id=website_id,
+                    external_id=item["external_id"],
+                    currency=item["currency"],
+                    price=int(item["price"]),
+                    address=item["address"],
+                    description=item["description"],
+                    title=item["title"],
+                    images=item["photos"],
+                    square_meters=self.__clean_square_meters(item["square_meters"])
+                ))
 
     async def __run_crawl(self, website_runnable: WebsiteRunnable, website_schema: WebsiteSchema) -> str:
         raw_result = await self.craw4ai_client.run_crawl(website_runnable.urls, website_schema)
@@ -68,7 +81,7 @@ class WebsiteRunnableService:
         raw_response = await self.craw4ai_client.get_crawl(task_id)
         json_response = await raw_response.json()
         if self.__is_crawl_finished(json_response):
-            return json_response["result"]
+            return json_response["results"]
         else:
             return await self.__get_crawl(task_id)
 
@@ -80,6 +93,13 @@ class WebsiteRunnableService:
         runnables = await cls.websites_runnables_repository.find_by_website_id(website_id)
         for runnable in runnables:
             await cls.__process_runnable(runnable, website.website_schema)
+        return True
+
+    async def run_single_by_website(cls, website_id, runnable_id) -> bool: 
+        website = await cls.websites_repository.find_one(website_id)
+        runnable = await cls.websites_runnables_repository.find_one(runnable_id)
+        await cls.__process_runnable(runnable, website.website_schema)
+        return True
 
     async def create_by_website_id(cls, website_id):
         website = await cls.websites_repository.find_one(website_id)

@@ -8,6 +8,7 @@ class SellHousesRepository(BaseRepository):
         super().__init__("houses",database_manager)
 
     async def insert(self, house: SellHouse) -> SellHouse:
+        house.set_audit_fields()
         house_dict = house.to_dict()
         result = await self.collection.insert_one(house_dict)  
         house.id = result.inserted_id

@@ -21,6 +21,8 @@ class WebsiteRunnableResponse(BaseModel):
 class WebsiteSchemaResponse(BaseModel):
     name: str
     baseSelector: str
+    type: Optional[str] = None
+    attribute: Optional[str] = None
     fields: List[WebsiteSchemaFieldResponse]
     class Config:
         from_attributes= True

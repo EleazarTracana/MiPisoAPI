@@ -2,10 +2,7 @@ from models.website_schema_field import WebsiteSchemaField
 from typing import List
 
 class WebsiteSchema: 
-    name: str
-    baseSelector: str
-    fields: List[WebsiteSchemaField]
-    def __init__(self, name, base_selector, fields):
+    def __init__(self, name: str, base_selector: str, fields: List[WebsiteSchemaField]):
         self.name = name
         self.baseSelector = base_selector
         self.fields = fields
