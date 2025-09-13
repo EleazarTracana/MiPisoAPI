@@ -9,9 +9,13 @@ services:
     environment:
       - CRAWL4AI_HOST=http://crawl4ai:11235
       - CRAWL4AI_API_TOKEN=test_api_token
+      - MONGODB_CONNECTION_STRING=mongodb://mongo:27017
+      - DATABASE_NAME=mipiso_db
     depends_on:
       - crawl4ai
       - mongo
+    networks:
+      - app_network
 
   crawl4ai:
     image: unclecode/crawl4ai:all
@@ -20,6 +24,8 @@ services:
       - CRAWL4AI_API_TOKEN=test_api_token
     ports:
       - "11235:11235"
+    networks:
+      - app_network
 
   mongo:
     image: mongo:6.0
@@ -29,6 +35,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - app_network
 
 volumes:
   mongo_data:
+
+networks:
+  app_network:
+    driver: bridge
