@@ -10,12 +10,13 @@ from repositories.sell_houses_repository import SellHousesRepository
 from typing import List
 import time
 import json
-
+import asyncio
 
 class WebsiteRunnableService:
     global max_chunk_runnable
     max_chunk_runnable = 1
-    runnable_wait_interval = 10
+    runnable_wait_interval = 1
+    max_concurrent_tasks = 12
 
     def __init__(self, websites_repository: WebsitesRepository = Depends(),
                  websites_runnables_repository: WebsiteRunnablesRepository = Depends(),
@@ -33,10 +34,10 @@ class WebsiteRunnableService:
             all_urls.append(f"{base_url}?pagina-{i+1}")
         return all_urls
 
-    def __clean_square_meters(self, raw_square_meters: str) -> int:
+    def __clean_square_meters(self, raw_square_meters: str) -> float:
         my_list = raw_square_meters.split(" ")
         if len(my_list) == 4 and my_list[2] == "m²":
-            return int(my_list[0])
+            return float(my_list[0].replace(",", "."))
         return None
 
     async def __process_runnable(self, runnable: WebsiteRunnable, website_schema: WebsiteSchema):
@@ -47,7 +48,11 @@ class WebsiteRunnableService:
         task_id = await self.__run_crawl(runnable, website_schema)
         results = await self.__get_crawl(task_id)
         for raw_result in results:
-            await self.__process_runnable_result(raw_result, runnable.website_id)
+            try:
+                await self.__process_runnable_result(raw_result, runnable.website_id)
+                print(f"Processed result for runnable {runnable.id}", flush=True)
+            except Exception as e:
+                print(f"Error processing result for runnable {runnable.id}: {e}")
 
     async def __process_runnable_result(self, raw_result, website_id):
         """
@@ -77,7 +82,7 @@ class WebsiteRunnableService:
         return json_result["task_id"]
 
     async def __get_crawl(self, task_id: str):
-        time.sleep(self.runnable_wait_interval)
+        await asyncio.sleep(self.runnable_wait_interval)
         raw_response = await self.craw4ai_client.get_crawl(task_id)
         json_response = await raw_response.json()
         if self.__is_crawl_finished(json_response):
@@ -91,8 +96,14 @@ class WebsiteRunnableService:
     async def run_by_website_id(cls, website_id) -> bool:
         website = await cls.websites_repository.find_one(website_id)
         runnables = await cls.websites_runnables_repository.find_by_website_id(website_id)
-        for runnable in runnables:
-            await cls.__process_runnable(runnable, website.website_schema)
+        semaphore = asyncio.Semaphore(cls.max_concurrent_tasks)
+
+        async def sem_task(runnable):
+            async with semaphore:
+                await cls.__process_runnable(runnable, website.website_schema)
+
+        tasks = [sem_task(runnable) for runnable in runnables]
+        await asyncio.gather(*tasks)
         return True
 
     async def run_single_by_website(cls, website_id, runnable_id) -> bool: 
